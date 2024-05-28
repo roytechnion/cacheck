@@ -12,7 +12,10 @@ class Policy(object):
     def record(self, key, size=1):
         pass
     def get_stats(self):
-        return {'size' : self.maximum_size, 'name' : self.__class__.__name__, 'hits' : self.hits, 'misses' : self.misses, 'hit ratio' : self.hits / (self.hits + self.misses) }
+        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'hit ratio' : self.hits / (self.hits + self.misses) }
+    def get_name(self):
+        return self.__class__.__name__
+
 
 class LRU(Policy):
     def __init__(self, maximum_size):
