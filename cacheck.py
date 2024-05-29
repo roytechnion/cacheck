@@ -48,19 +48,22 @@ def add_size_results(trace,policy,size,resname,resvalue):
 
 def main():
     f = open(args.outfile, "w")
-    f.write("{:<20},{:<12},{:<12},{:<12},{:<12},{:<12}, {:<12}".format('Trace', 'Policy', 'Cache Size', 'Hits', 'Misses', 'Hit Ratio', 'Time(s)'))
+    f.write("{:<20},{:<12},{:<12},{:<12},{:<12},{:<12},{:<12}".format('Trace', 'Policy', 'Cache Size', 'Hits', 'Misses', 'Hit Ratio', 'Time(s)'))
+    technologies = []
     for storage in storage_technologies:
         for cache in cache_technologies:
-            f.write(",{:12}".format(storage.name+cache.name))
+            technology = storage.name+cache.name
+            f.write(",{:12}".format(technology))
+            technologies.append(technology)
     f.write("\n")
     policies = []
     for factor in range(3,7):
-        for i in range(1,10,5):
+        for i in range(1,10,1):
             if factor < 6 or i < 2:
                 policies.append(LRU(i*(10**factor)))
     #tracesfiles = glob.glob("C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\zipf_[1-1].[0-5]_0.0.tr")
     tracesfiles = []
-    for trace in ["zipf_0.6_0.0"]: #, "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
+    for trace in ["zipf_0.6_0.0", "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
         tracesfiles.append(os.path.join(args.tracesdir,trace+".tr"))
     for tracefile in tracesfiles:
         add_trace_results(os.path.basename(tracefile))
@@ -83,7 +86,7 @@ def main():
             print(".", end="")
     f.close()
     print("")
-    graphs.generate_all_graphs(".\\graphs",aggresults)
+    graphs.generate_all_graphs(".\\graphs",aggresults,technologies)
 
 
 if __name__ == "__main__":
