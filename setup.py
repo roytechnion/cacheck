@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='weightedcacheck',
+    name='cacheck',
     version='1.0',
     packages=[''],
     url='',
