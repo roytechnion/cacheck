@@ -2,6 +2,7 @@ from enum import Enum, auto
 from collections import Counter
 from math import log
 from scipy import stats
+from sortedcontainers import SortedDict
 
 class Policy(object):
     def __init__(self, maximum_size):
@@ -43,6 +44,7 @@ class LRU(Policy):
             new_node.append_to_tail(self.sentinel)
             self.data[key] = new_node
 
+
 class Node(object):
     def __init__(self, data=None, size=1, status=None):
         self.data = data
@@ -63,4 +65,36 @@ class Node(object):
         self.prev_node = sentinel
         self.prev_node.next_node = self
         self.next_node.prev_node = self
+
+
+class LFU(Policy):
+    def __init__(self, maximum_size):
+        super().__init__(maximum_size)
+        self.current_size = 0
+        self.lfuq = SortedDict()
+        self.items = {}
+
+    def record(self, key, size=1):
+        node = self.items.get(key)
+        if node:
+            self.hits += 1
+            item = self.items[key]
+            lfuid = item[0]
+            newlfuid = (lfuid[0]+1,lfuid[1])
+            self.lfuq.pop(lfuid)
+            self.lfuq[newlfuid] = key
+            self.items[key] = (newlfuid,item[1])
+        else:
+            self.misses += 1
+            if size > self.maximum_size:
+                return
+            self.current_size += size
+            while (self.current_size > self.maximum_size):
+                victim = self.lfuq.popitem(0)
+                self.current_size -= self.items[victim[1]][1]
+                self.items.pop(victim[1])
+            lfuid = (1,self.misses)
+            self.items[key] = (lfuid,size)
+            self.lfuq[lfuid] = key
+
 

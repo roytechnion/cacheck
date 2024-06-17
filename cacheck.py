@@ -1,7 +1,7 @@
 import os.path
 import time
 #from simplepolicies import LRU , WTinyLFU, AdaptiveWTinyLFU, WC_WTinyLFU, WI_WTinyLFU
-from simplepolicies import LRU
+from simplepolicies import LRU,LFU
 from parsers import LirsParser
 import glob
 from costmodel import CostModel
@@ -12,7 +12,7 @@ import graphs
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', action='store', default='results.csv')
 parser.add_argument('-p', '--path', action='store', default='graphs')
-parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
+parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\royfr\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
 args = parser.parse_args()
 
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
@@ -59,6 +59,7 @@ def main():
         for i in range(1,10,1):
             if factor < 6 or i < 2:
                 policies.append(LRU(i*(10**factor)))
+                policies.append(LFU(i * (10 ** factor)))
     #tracesfiles = glob.glob("C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\zipf_[1-1].[0-5]_0.0.tr")
     tracesfiles = []
     for trace in ["zipf_0.6_0.0", "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
