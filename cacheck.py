@@ -12,7 +12,7 @@ import graphs
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', action='store', default='results.csv')
 parser.add_argument('-p', '--path', action='store', default='graphs')
-parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\royfr\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
+parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
 args = parser.parse_args()
 
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
