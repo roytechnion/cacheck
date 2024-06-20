@@ -32,3 +32,9 @@ class SizedParser(Parser):
     def parse(self, line):
         line = line.split()
         self.items.append((int(line[1]), int(line[2])))
+
+
+class RedisParser(Parser):
+    def parse(self, line):
+        line = line.split()
+        self.items.append(int(line[1]))

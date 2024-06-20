@@ -105,4 +105,5 @@ venv.bak/
 
 # my ignores
 my*
-graphs/zipf_0.6_0.0.tr-hit_ratio.png
+graphs/*
+traces/*

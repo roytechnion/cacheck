@@ -2,7 +2,7 @@ import os.path
 import time
 #from simplepolicies import LRU , WTinyLFU, AdaptiveWTinyLFU, WC_WTinyLFU, WI_WTinyLFU
 from simplepolicies import LRU,LFU
-from parsers import LirsParser
+from parsers import LirsParser,RedisParser
 import glob
 from costmodel import CostModel
 import argparse
@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-o', '--outfile', action='store', default='results.csv')
 parser.add_argument('-p', '--path', action='store', default='graphs')
 parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
+parser.add_argument('-r', '--redis', action='store', type=bool, default=False)
 args = parser.parse_args()
 
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
@@ -62,8 +63,11 @@ def main():
                 policies.append(LFU(i * (10 ** factor)))
     #tracesfiles = glob.glob("C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\zipf_[1-1].[0-5]_0.0.tr")
     tracesfiles = []
-    for trace in ["zipf_0.6_0.0", "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
-        tracesfiles.append(os.path.join(args.tracesdir,trace+".tr"))
+    if args.redis:
+        tracesfiles = glob.glob(os.path.join(args.tracesdir,'redis_anonymized_*.txt'))
+    else:
+        for trace in ["zipf_0.6_0.0", "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
+            tracesfiles.append(os.path.join(args.tracesdir,trace+".tr"))
         for recency in ["0.5", "1.0"]:
             recencytrace = trace.replace("0.0",recency)  # BUG: does not work "zipf_0.0_[0-9].[0.9]" traces
             tracesfiles.append(os.path.join(args.tracesdir, recencytrace + ".tr"))
@@ -72,7 +76,10 @@ def main():
         for policy in policies:
             add_policy_results(os.path.basename(tracefile),policy.get_name())
             start = time.time()
-            trace = LirsParser(tracefile)
+            if args.redis:
+                trace = RedisParser(tracefile)
+            else:
+                trace = LirsParser(tracefile)
             results = run(trace, policy)
             end = time.time()
             add_size_results(os.path.basename(tracefile), policy.get_name(), policy.maximum_size, "hit ratio", results['hit ratio'])
