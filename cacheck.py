@@ -23,6 +23,7 @@ aggresults = {}
 
 
 def run(trace, policy):
+    policy.reset()
     for item in trace:
         policy.record(item)
     return policy.get_stats()
