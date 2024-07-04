@@ -13,13 +13,13 @@ class LevelPolicy(object):
         pass
 
     def try_access(self, key, status=None):
-        return None
+        return (False,None)
 
     def record(self, key, size=1, status=None):
         return []
 
     def get_stats(self):
-        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'hit ratio' : self.hits / (self.hits + self.misses) }
+        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses) }
 
     def get_name(self):
         return self.__class__.__name__
@@ -50,10 +50,10 @@ class LLRU(LevelPolicy):
         node = self.data.get(key)
         if node:
             self.lru_hit(node, status)
-            return node.status
+            return (True,node.status)
         else:
             self.misses += 1
-            return None
+            return (False,None)
 
     def record(self, key, size=1, status=None):
         self.accesses += 1
@@ -68,7 +68,7 @@ class LLRU(LevelPolicy):
             self.current_size += size
             victims = []
             while (self.current_size > self.maximum_size):
-                victims.append((self.sentinel.next_node.data,self.sentinel.next_node.status))
+                victims.append((self.sentinel.next_node.data,self.sentinel.next_node.size,self.sentinel.next_node.status))
                 del self.data[self.sentinel.next_node.data]
                 self.current_size -= self.sentinel.next_node.size
                 self.sentinel.next_node.remove()

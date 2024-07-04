@@ -35,3 +35,58 @@ from levelpolicies import LLRU
 #     For each victim, if dirty, increment RT access count
 # END:
 # If it is a write, we mark dirty.
+
+class HierarchicalCache(object):
+    def __init__(self, l1_maximum_size, l2_maximum_size):
+        self.l1_maximum_size = l1_maximum_size
+        self.l2_maximum_size = l2_maximum_size
+        self.misses = 0
+        self.hits = 0
+        self.accesses = 0
+        self.remote = 0
+        self.l1_cache = LLRU(l1_maximum_size)
+        self.l2_cache = LLRU(l2_maximum_size)
+        pass
+
+    def reset(self):
+        self.misses = 0
+        self.hits = 0
+        self.accesses = 0
+        self.remote = 0
+        self.l1_cache.reset()
+        self.l2_cache.reset()
+
+    def handle_l2_victim(self, victim):
+        (key, size, status) = victim
+        if status:
+            self.remote += 1
+        pass
+
+    def handle_l1_victim(self, victim):
+        (key, size, status) = victim
+        l2_victims = self.l2_cache.record(key, size, status)
+        for victim in l2_victims:
+            self.handle_l2_victim(victim)
+        pass
+
+    def l1_record(self, key, size=1, status=None):
+        l1_victims = self.l1_cache.record(key, size, status)
+        for victim in l1_victims:
+            self.handle_l1_victim(victim)
+
+    def record(self, key, size=1, status=None):
+        self.accesses += 1
+        if status:
+            self.l1_record(key, size, status)
+            return
+        (hit,found_status) = self.l1_cache.try_access(key, status)
+        if hit:
+            return
+        (hit, found_status) = self.l2_cache.try_access(key, status)
+        if hit:
+            self.l1_record(key, size, found_status)
+        else:
+            self.remote += 1
+            self.l1_record(key, size, status)
+
+
