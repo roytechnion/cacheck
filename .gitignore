@@ -107,3 +107,4 @@ venv.bak/
 my*
 graphs/*
 traces/*
+results.*

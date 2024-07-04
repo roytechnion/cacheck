@@ -14,6 +14,7 @@ parser.add_argument('-o', '--outfile', action='store', default='results.csv')
 parser.add_argument('-p', '--path', action='store', default='graphs')
 parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\')
 parser.add_argument('-r', '--redis', action='store', type=bool, default=False)
+parser.add_argument('-a', '--append', action='store', type=bool, default=False)
 args = parser.parse_args()
 
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
@@ -47,7 +48,10 @@ def add_size_results(trace,policy,size,resname,resvalue):
 
 
 def main():
-    f = open(args.outfile, "w")
+    open_mode = "w"
+    if args.append:
+        open_mode = "a"
+    f = open(args.outfile, open_mode)
     f.write("{:<20},{:<12},{:<12},{:<12},{:<12},{:<12},{:<12}".format('Trace', 'Policy', 'Cache Size', 'Hits', 'Misses', 'Hit Ratio', 'Time(s)'))
     technologies = []
     for storage in storage_technologies:
@@ -69,9 +73,9 @@ def main():
     else:
         for trace in ["zipf_0.6_0.0", "zipf_0.8_0.0", "zipf_1.0_0.0", "zipf_1.2_0.0", "zipf_1.5_0.0"]:
             tracesfiles.append(os.path.join(args.tracesdir,trace+".tr"))
-        for recency in ["0.5", "1.0"]:
-            recencytrace = trace.replace("0.0",recency)  # BUG: does not work "zipf_0.0_[0-9].[0.9]" traces
-            tracesfiles.append(os.path.join(args.tracesdir, recencytrace + ".tr"))
+            for recency in ["0.5", "1.0"]:
+                recencytrace = trace.replace("0.0",recency)  # BUG: does not work "zipf_0.0_[0-9].[0.9]" traces
+                tracesfiles.append(os.path.join(args.tracesdir, recencytrace + ".tr"))
     for tracefile in tracesfiles:
         add_trace_results(os.path.basename(tracefile))
         for policy in policies:
