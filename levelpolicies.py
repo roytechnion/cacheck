@@ -13,7 +13,7 @@ class LevelPolicy(object):
         pass
 
     def try_access(self, key, status=None):
-        return (False,None)
+        return False
 
     def record(self, key, size=1, status=None):
         return []
@@ -50,10 +50,10 @@ class LLRU(LevelPolicy):
         node = self.data.get(key)
         if node:
             self.lru_hit(node, status)
-            return (True,node.status)
+            return True
         else:
             self.misses += 1
-            return (False,None)
+            return False
 
     def record(self, key, size=1, status=None):
         self.accesses += 1

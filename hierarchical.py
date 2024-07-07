@@ -79,12 +79,12 @@ class HierarchicalCache(object):
         if status:
             self.l1_record(key, size, status)
             return
-        (hit,found_status) = self.l1_cache.try_access(key, status)
+        hit = self.l1_cache.try_access(key, status)
         if hit:
             return
-        (hit, found_status) = self.l2_cache.try_access(key, status)
+        hit = self.l2_cache.try_access(key, status)
         if hit:
-            self.l1_record(key, size, found_status)
+            self.l1_record(key, size, status)
         else:
             self.remote += 1
             self.l1_record(key, size, status)
