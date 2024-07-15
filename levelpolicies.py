@@ -16,7 +16,7 @@ class LevelPolicy(object):
         return False
 
     def record(self, key, size=1, status=None):
-        return []
+        return False,[]
 
     def get_stats(self):
         return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses) }
@@ -60,11 +60,11 @@ class LLRU(LevelPolicy):
         node = self.data.get(key)
         if node:
             self.lru_hit(node, status)
-            return []
+            return True,[]
         else:
             self.misses += 1
             if size > self.maximum_size:
-                return
+                return False,[]
             self.current_size += size
             victims = []
             while (self.current_size > self.maximum_size):
@@ -75,7 +75,7 @@ class LLRU(LevelPolicy):
             new_node = LNode(key, size=size, status=status)
             new_node.append_to_tail(self.sentinel)
             self.data[key] = new_node
-            return victims
+            return False,victims
 
 
 class LNode(object):

@@ -17,24 +17,6 @@ from levelpolicies import LLRU
 # Complications: We must fst check if in fst level, if yes, it is a hit. Then, check if in scnd level. If yes, hit there and bring it to fst. When evicting from fst, write to snd and if necessary remove one from there, but needs to be careful as it might be there). In the case of writeback, should not be counted as a hit nor as a miss.
 # It seems that we also need to compute accesses and not just hits and misses.
 
-# Algorithm:
-# On an access to high level:
-#   Increment TL access count.
-#   If exists in high level, we simply incur a hit: increment TL + OA hit count and skip to END.
-#   Otherwise, increment TL miss count and initiate an access to low level.
-#     Increment BL access count
-#     If it exists in low level, increment BL + OA hit count and return to high level.
-#     Otherwise, increment BL miss count and return nil
-#   When returning, if nil
-#     If read, increment RT access count
-#   Increment TL access count
-#   Add to high level and check for victim(s)
-#   If victim(s) is(are) dirty, initiate an add to low level
-#     Increment BL access count
-#     Check for victim(s)
-#     For each victim, if dirty, increment RT access count
-# END:
-# If it is a write, we mark dirty.
 
 class HierarchicalCache(object):
     def __init__(self, l1_maximum_size, l2_maximum_size):
@@ -48,6 +30,15 @@ class HierarchicalCache(object):
         self.l2_cache = LLRU(l2_maximum_size)
         pass
 
+    def get_stats(self):
+        res1 = self.l1_cache.get_stats()
+        res2 = self.l2_cache.get_stats()
+        return {'name': self.__class__.__name__, 'l1_size': res1['size'], 'l2_size': res2['size'], 'l1_hits': res1['hits'], 'l1_misses': res1['misses'], 'l1_accesses': res1['accesses'], 'l1_hit_ratio': res1['hit ratio'], 'l2_hits': res2['hits'], 'l2_misses': res2['misses'], 'l2_accesses': res2['accesses'], 'l2_hit_ratio': res2['hit ratio'], 'total_hits': self.hits, 'total_misses': self.misses, 'total_accesses': self.accesses, 'remote_accesses': self.remote, 'total_hit_ratio': self.hits/(self.hits+self.misses)}
+       # return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses) }
+
+    def get_name(self):
+        return self.__class__.__name__
+
     def reset(self):
         self.misses = 0
         self.hits = 0
@@ -58,19 +49,23 @@ class HierarchicalCache(object):
 
     def handle_l2_victim(self, victim):
         (key, size, status) = victim
-        if status:
-            self.remote += 1
+        # Commented out the code below since this is probably done asynchrounously, so no need to to count this remote access.
+        # VERIFY
+        # if status:
+        #    self.remote += 1
         pass
 
     def handle_l1_victim(self, victim):
         (key, size, status) = victim
-        l2_victims = self.l2_cache.record(key, size, status)
+        (l2_hits,l2_victims) = self.l2_cache.record(key, size, status)
         for victim in l2_victims:
             self.handle_l2_victim(victim)
         pass
 
     def l1_record(self, key, size=1, status=None):
-        l1_victims = self.l1_cache.record(key, size, status)
+        (l1_hit,l1_victims) = self.l1_cache.record(key, size, status)
+        if l1_hit:
+            self.hits += 1
         for victim in l1_victims:
             self.handle_l1_victim(victim)
 
@@ -81,11 +76,14 @@ class HierarchicalCache(object):
             return
         hit = self.l1_cache.try_access(key, status)
         if hit:
+            self.hits += 1
             return
         hit = self.l2_cache.try_access(key, status)
         if hit:
+            self.hits += 1
             self.l1_record(key, size, status)
         else:
+            self.misses += 1
             self.remote += 1
             self.l1_record(key, size, status)
 

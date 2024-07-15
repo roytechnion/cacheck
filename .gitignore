@@ -108,3 +108,5 @@ my*
 graphs/*
 traces/*
 results.*
+multi-output.csv
+levelpolicies.py
