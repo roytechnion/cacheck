@@ -20,7 +20,8 @@ parser.add_argument('-m', '--multilayer', action='store', type=bool, default=Fal
 args = parser.parse_args()
 
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
-storage_technologies = [CostModel("Dynamodb", 10), CostModel("Mongodb", 50), CostModel("SQL", 100)]
+# storage_technologies = [CostModel("Dynamodb", 10), CostModel("Mongodb", 50), CostModel("SQL", 100)]
+storage_technologies = [CostModel("FastDB", 10), CostModel("ModDB", 50), CostModel("SlowDB", 100)]
 
 aggresults = {}
 
@@ -56,14 +57,16 @@ def main():
     f = open(args.outfile, open_mode)
     if args.multilayer:
         f.write("Trace, Policy, L1_Size, L2_Size, L1_Hits, L2_Misses, L1_Accesses, L1_Hit_Ratio, L2_Hits, L2_Misses, L2_Accesses, L2_Hit_Ratio, Total_Hits, Total_Misses, Total_Accesses, Remote_Accesses, Total_Hit_Ratio, Time(s)")
+        for storage in storage_technologies:
+            f.write(", Weighted{}".format(storage.name))
     else:
         f.write("{:<20},{:<12},{:<12},{:<12},{:<12},{:<12},{:<12}".format('Trace', 'Policy', 'Cache Size', 'Hits', 'Misses', 'Hit Ratio', 'Time(s)'))
-    technologies = []
-    for storage in storage_technologies:
-        for cache in cache_technologies:
-            technology = storage.name+cache.name
-            f.write(",{:12}".format(technology))
-            technologies.append(technology)
+        technologies = []
+        for storage in storage_technologies:
+            for cache in cache_technologies:
+                technology = storage.name+cache.name
+                f.write(",{:12}".format(technology))
+                technologies.append(technology)
     f.write("\n")
     policies = []
     if args.multilayer:
@@ -101,8 +104,11 @@ def main():
             results = run(trace, policy)
             end = time.time()
             if args.multilayer:
-                f.write("{trace:<20},".format(trace=os.path.basename(tracefile)))
+                f.write("{trace:<20}, ".format(trace=os.path.basename(tracefile)))
                 f.write("{name}, {l1_size}, {l2_size}, {l1_hits}, {l1_misses}, {l1_accesses}, {l1_hit_ratio}, {l2_hits}, {l2_misses}, {l2_accesses}, {l2_hit_ratio}, {total_hits}, {total_misses}, {total_accesses}, {remote_accesses}, {total_hit_ratio}, {time}".format(**results, time=round(end - start,4)))
+                for storage in storage_technologies:
+                    weighted = results['l1_accesses'] * cache_technologies[0].access_time + results['l2_accesses'] * cache_technologies[1].access_time + results['remote_accesses'] * storage.access_time
+                    f.write(", {:12}".format(weighted))
             else:
                 add_size_results(os.path.basename(tracefile), policy.get_name(), policy.maximum_size, "hit ratio", results['hit ratio'])
                 f.write("{trace:<20},".format(trace=os.path.basename(tracefile)))
