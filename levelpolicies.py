@@ -4,6 +4,7 @@ class LevelPolicy(object):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
+        self.writes = 0
         self.charged = 0
         pass
 
@@ -11,6 +12,7 @@ class LevelPolicy(object):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
+        self.writes = 0
         self.charged = 0
         pass
 
@@ -21,7 +23,7 @@ class LevelPolicy(object):
         return False,[]
 
     def get_stats(self):
-        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses), 'charged' : self.charged }
+        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'writes' : self.writes, 'charged' : self.charged, 'hit ratio' : self.hits / (self.hits + self.misses) }
 
     def get_name(self):
         return self.__class__.__name__
@@ -40,35 +42,41 @@ class LLRU(LevelPolicy):
         self.data = {}
         self.sentinel = LNode()
 
-    def lru_hit(self, node, status=None):
-        self.hits += 1
+    def lru_hit(self, node, status=None, count=True):
+        if count:
+            self.hits += 1
+            self.charged += 1
         node.remove()
         node.append_to_tail(self.sentinel)
         if status:
+            self.writes += 1 # a write always increments number of writes
             node.status = status
 
-    def try_access(self, key, status=None, charge=False):
+    def try_access(self, key, allcharge=False):
         self.accesses += 1
-        if charge:
-            self.charged += 1
         node = self.data.get(key)
         if node:
-            self.lru_hit(node, status)
+            self.lru_hit(node, status=None) # try_access is only meant for read-only accesses
             return True
         else:
+            if allcharge:
+                self.charged += 1
             self.misses += 1
             return False
 
-    def record(self, key, size=1, status=None, charge=False):
-        self.accesses += 1
-        if charge:
-            self.charged += 1
+    def record(self, key, size=1, status=None, count=True, allcharge=False):
+        if count:
+            self.accesses += 1
         node = self.data.get(key)
         if node:
-            self.lru_hit(node, status)
+            self.lru_hit(node, status, count=count)
             return True,[]
         else:
-            self.misses += 1
+            if count:
+                self.misses += 1
+            self.writes += 1 # if we had a miss, we write this new item in this cache
+            if allcharge:
+                self.charged += 1
             if size > self.maximum_size:
                 return False,[]
             self.current_size += size
