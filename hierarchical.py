@@ -25,7 +25,8 @@ class HierarchicalCache(object):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
-        self.remote = 0
+        self.remote_accesses = 0
+        self.remote_charged = 0
         self.l1_cache = LLRU(l1_maximum_size)
         self.l2_cache = LLRU(l2_maximum_size)
         pass
@@ -33,7 +34,7 @@ class HierarchicalCache(object):
     def get_stats(self):
         res1 = self.l1_cache.get_stats()
         res2 = self.l2_cache.get_stats()
-        return {'name': self.__class__.__name__, 'l1_size': res1['size'], 'l2_size': res2['size'], 'l1_hits': res1['hits'], 'l1_misses': res1['misses'], 'l1_accesses': res1['accesses'], 'l1_hit_ratio': res1['hit ratio'], 'l2_hits': res2['hits'], 'l2_misses': res2['misses'], 'l2_accesses': res2['accesses'], 'l2_hit_ratio': res2['hit ratio'], 'total_hits': self.hits, 'total_misses': self.misses, 'total_accesses': self.accesses, 'remote_accesses': self.remote, 'total_hit_ratio': self.hits/(self.hits+self.misses)}
+        return {'name': self.__class__.__name__, 'l1_size': res1['size'], 'l2_size': res2['size'], 'l1_hits': res1['hits'], 'l1_misses': res1['misses'], 'l1_accesses': res1['accesses'], 'l1_hit_ratio': res1['hit ratio'], 'l1_charged': res1['charged'], 'l2_hits': res2['hits'], 'l2_misses': res2['misses'], 'l2_accesses': res2['accesses'], 'l2_hit_ratio': res2['hit ratio'], 'l2_charged': res2['charged'], 'total_hits': self.hits, 'total_misses': self.misses, 'total_accesses': self.accesses, 'remote_accesses': self.remote_accesses, 'remote_charged': self.remote_charged, 'total_hit_ratio': self.hits/(self.hits+self.misses)}
        # return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses) }
 
     def get_name(self):
@@ -43,27 +44,33 @@ class HierarchicalCache(object):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
-        self.remote = 0
+        self.remote_accesses = 0
+        self.remote_charged = 0
         self.l1_cache.reset()
         self.l2_cache.reset()
 
+
+    # We handle the l2 victims by writing back victimes that were modified
+    # Yet, we do not count a remote_charge for them since we assume write-backs are totally asynchronous
     def handle_l2_victim(self, victim):
         (key, size, status) = victim
-        # Commented out the code below since this is probably done asynchrounously, so no need to to count this remote access.
-        # VERIFY
-        # if status:
-        #    self.remote += 1
+        if status:
+            self.remote_accesses += 1
         pass
 
+
+    # We handle the l1 victims by recording them in the L2
+    # The l2.record function is called with charge=False since we assume that such write-backs are asynchronous so 0 latency
+    # Next, each victim of the l2 should be handled as well
     def handle_l1_victim(self, victim):
         (key, size, status) = victim
-        (l2_hits,l2_victims) = self.l2_cache.record(key, size, status)
+        (l2_hits,l2_victims) = self.l2_cache.record(key, size, status, charge=False)
         for victim in l2_victims:
             self.handle_l2_victim(victim)
         pass
 
     def l1_record(self, key, size=1, status=None):
-        (l1_hit,l1_victims) = self.l1_cache.record(key, size, status)
+        (l1_hit,l1_victims) = self.l1_cache.record(key, size, status, charge=True)
         if l1_hit:
             self.hits += 1
         for victim in l1_victims:
@@ -74,17 +81,17 @@ class HierarchicalCache(object):
         if status:
             self.l1_record(key, size, status)
             return
-        hit = self.l1_cache.try_access(key, status)
+        hit = self.l1_cache.try_access(key, status, charge=True)
         if hit:
             self.hits += 1
             return
-        hit = self.l2_cache.try_access(key, status)
+        hit = self.l2_cache.try_access(key, status, charge=False) # TODO - think
         if hit:
             self.hits += 1
             self.l1_record(key, size, status)
         else:
             self.misses += 1
-            self.remote += 1
+            self.remote_accesses += 1
             self.l1_record(key, size, status)
 
 

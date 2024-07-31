@@ -56,7 +56,7 @@ def main():
         open_mode = "a"
     f = open(args.outfile, open_mode)
     if args.multilayer:
-        f.write("Trace, Policy, L1_Size, L2_Size, L1_Hits, L1_Misses, L1_Accesses, L1_Hit_Ratio, L2_Hits, L2_Misses, L2_Accesses, L2_Hit_Ratio, Total_Hits, Total_Misses, Total_Accesses, Remote_Accesses, Total_Hit_Ratio, Time(s)")
+        f.write("Trace, Policy, L1_Size, L2_Size, L1_Hits, L1_Misses, L1_Accesses, L1_Hit_Ratio, L1_Charged, L2_Hits, L2_Misses, L2_Accesses, L2_Hit_Ratio, L2_Charged, Total_Hits, Total_Misses, Total_Accesses, Remote_Accesses, Remote_Charged, Total_Hit_Ratio, Time(s)")
         for storage in storage_technologies:
             f.write(", Weighted{}".format(storage.name))
     else:
@@ -105,7 +105,7 @@ def main():
             end = time.time()
             if args.multilayer:
                 f.write("{trace:<20}, ".format(trace=os.path.basename(tracefile)))
-                f.write("{name}, {l1_size}, {l2_size}, {l1_hits}, {l1_misses}, {l1_accesses}, {l1_hit_ratio}, {l2_hits}, {l2_misses}, {l2_accesses}, {l2_hit_ratio}, {total_hits}, {total_misses}, {total_accesses}, {remote_accesses}, {total_hit_ratio}, {time}".format(**results, time=round(end - start,4)))
+                f.write("{name}, {l1_size}, {l2_size}, {l1_hits}, {l1_misses}, {l1_accesses}, {l1_hit_ratio}, {l1_charged}, {l2_hits}, {l2_misses}, {l2_accesses}, {l2_hit_ratio}, {l2_charged}, {total_hits}, {total_misses}, {total_accesses}, {remote_accesses}, {remoted_charged}, {total_hit_ratio}, {time}".format(**results, time=round(end - start,4)))
                 for storage in storage_technologies:
                     weighted = results['l1_accesses'] * cache_technologies[0].access_time + results['l2_accesses'] * cache_technologies[1].access_time + results['remote_accesses'] * storage.access_time
                     f.write(", {:12}".format(weighted))

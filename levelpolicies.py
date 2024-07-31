@@ -4,12 +4,14 @@ class LevelPolicy(object):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
+        self.charged = 0
         pass
 
     def reset(self):
         self.misses = 0
         self.hits = 0
         self.accesses = 0
+        self.charged = 0
         pass
 
     def try_access(self, key, status=None):
@@ -19,7 +21,7 @@ class LevelPolicy(object):
         return False,[]
 
     def get_stats(self):
-        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses) }
+        return {'name' : self.__class__.__name__, 'size' : self.maximum_size, 'hits' : self.hits, 'misses' : self.misses, 'accesses' : self.accesses, 'hit ratio' : self.hits / (self.hits + self.misses), 'charged' : self.charged }
 
     def get_name(self):
         return self.__class__.__name__
@@ -45,8 +47,10 @@ class LLRU(LevelPolicy):
         if status:
             node.status = status
 
-    def try_access(self, key, status=None):
+    def try_access(self, key, status=None, charge=False):
         self.accesses += 1
+        if charge:
+            self.charged += 1
         node = self.data.get(key)
         if node:
             self.lru_hit(node, status)
@@ -55,8 +59,10 @@ class LLRU(LevelPolicy):
             self.misses += 1
             return False
 
-    def record(self, key, size=1, status=None):
+    def record(self, key, size=1, status=None, charge=False):
         self.accesses += 1
+        if charge:
+            self.charged += 1
         node = self.data.get(key)
         if node:
             self.lru_hit(node, status)
