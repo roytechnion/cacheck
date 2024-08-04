@@ -56,7 +56,7 @@ def main():
         open_mode = "a"
     f = open(args.outfile, open_mode)
     if args.multilayer:
-        f.write("Trace, Policy, L1_Size, L2_Size, L1_Hits, L1_Misses, L1_Accesses, L1_Writes, L1_Charged, L1_Hit_Ratio, L2_Hits, L2_Misses, L2_Accesses, L2_Writes, L2_Charged, L2_Hit_Ratio, Total_Hits, Total_Misses, Total_Accesses, Remote_Accesses, Remote_Writes, Remote_Charged, Total_Hit_Ratio, Time(s)")
+        f.write("Trace,Policy,L1_Size,L2_Size,L1_Hits,L1_Misses,L1_Accesses,L1_Writes,L1_Charged,L1_Hit_Ratio,L2_Hits,L2_Misses,L2_Accesses,L2_Writes,L2_Charged,L2_Hit_Ratio,Total_Hits,Total_Misses,Total_Accesses,Remote_Accesses,Remote_Writes,Remote_Charged,Total_Hit_Ratio,Time(s)")
         for storage in storage_technologies:
             f.write(", Weighted{}".format(storage.name))
     else:

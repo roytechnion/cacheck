@@ -69,8 +69,8 @@ class HierarchicalCache(object):
             self.handle_l2_victim(victim)
         pass
 
-    def l1_record(self, key, size=1, status=None, count=True):
-        (l1_hit,l1_victims) = self.l1_cache.record(key, size, status, allcharge=True, count=count)
+    def l1_record(self, key, size=1, status=None, count=True, allcharge=True):
+        (l1_hit,l1_victims) = self.l1_cache.record(key, size, status, count=count,  allcharge=allcharge)
         if l1_hit:
             self.hits += 1
         for victim in l1_victims:
@@ -88,11 +88,11 @@ class HierarchicalCache(object):
         hit = self.l2_cache.try_access(key, allcharge=False) # allcharge=False since we assume a bloom filter that prevents misses from invoking an access to SSD
         if hit:
             self.hits += 1
-            self.l1_record(key, size, status, count=False) # count=False since we already counted hit/miss/access during the try_access
+            self.l1_record(key, size, status, count=False, allcharge=False) # count=False since we already counted hit/miss/access during the try_access
         else:
             self.misses += 1
             self.remote_accesses += 1
             self.remote_charged += 1 # we simulate a read by charging the latency
-            self.l1_record(key, size, status, count=False) # count=False since we already counted hit/miss/access during the try_access
+            self.l1_record(key, size, status, count=False, allcharge=False) # count=False since we already counted hit/miss/access during the try_access
 
 
