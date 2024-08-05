@@ -110,3 +110,4 @@ traces/*
 results.*
 multi-output.csv
 levelpolicies.py
+*.csv
