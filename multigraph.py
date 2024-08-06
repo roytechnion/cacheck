@@ -9,7 +9,31 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--infile', action='store', default='multi-output.csv')
 parser.add_argument('-d', '--indir', action='store', default='.')
+parser.add_argument('-o', '--outdir', action='store', default='.\\graphs\\multilevel')
 args = parser.parse_args()
+
+
+def multiplot_storage(storage,traceresults,X,Y,_x,_y):
+    fig = plt.figure(figsize=plt.figaspect(1))
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
+    _Z, _ = np.meshgrid(X, Y)
+    #Z = np.zeros((len(X), len(Y)))
+    #print(Z)
+    for total, totalresults in traceresults.items():
+        for percentage, percentageresults in totalresults.items():
+            print(total, percentage)
+            #Z[np.where(X == total)[0][0], np.where(Y == percentage)[0][0]] = results[trace][total][percentage][storage]
+            _Z[np.where(Y == percentage)[0][0], np.where(X == total)[0][0]] = results[trace][total][percentage][storage]
+    print("Z=", _Z)
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    surf = ax.plot_surface(_X, _Y, _Z, cmap=cm.coolwarm)
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    plt.xlabel("Total Cache Size")
+    plt.ylabel("L1 Relative Size")
+    ax.set_title(trace + ":" + storage)
+    plt.savefig(os.path.join(args.outdir, trace.split(".")[0] + "-" + storage + ".png"), bbox_inches='tight')
+    plt.close()
+
 
 results = {}
 with open(os.path.join(args.indir,args.infile), mode ='r') as file:
@@ -23,7 +47,6 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         L2_size = int(row['L2_Size'])
         total = L1_size + L2_size
         percentage = round(float(L1_size / total),2)
-        #print(L1_size," ",L2_size," ",total," ",percentage)
         if total not in results[trace]:
             results[trace][total] = {}
         if percentage not in results[trace][total]:
@@ -42,8 +65,6 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         results[trace][total][percentage]['WeightedSlowDB'] = float(row[' WeightedSlowDB'])
     for trace,traceresults in results.items():
         print(trace)
-        fig = plt.figure(figsize=plt.figaspect(1))
-        ax = fig.add_subplot(1, 2, 1, projection='3d')
         X = []
         Y = []
         for total,totalresults in traceresults.items():
@@ -57,23 +78,10 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         _X, _Y = np.meshgrid(X, Y)
         print(_X)
         print(_Y)
-        _Z, _ = np.meshgrid(X, Y)
-        Z = np.zeros((len(X), len(Y)))
-        print(Z)
-        for total,totalresults in traceresults.items():
-            for percentage, percentageresults in totalresults.items():
-                print(total,percentage)
-                Z[np.where(X == total)[0][0],np.where(Y == percentage)[0][0]] = results[trace][total][percentage]['WeightedFastDB']
-                _Z[np.where(Y == percentage)[0][0],np.where(X == total)[0][0]] = results[trace][total][percentage]['WeightedFastDB']
-        print(_Z)
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        surf = ax.plot_surface(_X,_Y,_Z, cmap=cm.coolwarm)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.xlabel("Total Cache Size")
-        plt.ylabel("L1 Relative Size")
-        ax.set_title(trace + ":WeightedFastDB")
-        plt.show()
-        input("Press the Enter key to continue: ")
+        for storage in ["FastDB","ModDB","SlowDB"]:
+            multiplot_storage("Weighted"+storage,traceresults,X,Y,_X,_Y)
+        #plt.show()
+        #input("Press the Enter key to continue: ")
 
 
 

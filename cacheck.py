@@ -75,7 +75,7 @@ def main():
                 if factor < 6 or i < 2:
                     cachesize = i*(10**factor)
                     for percentage in [0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.5]:
-                        policies.append(HierarchicalCache(int(percentage*cachesize), int((1-percentage)*cachesize)))
+                        policies.append(HierarchicalCache(round(percentage*cachesize), round((1-percentage)*cachesize)))
     else:
         for factor in range(3,7):
             for i in range(1,10,1):
