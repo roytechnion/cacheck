@@ -30,7 +30,7 @@ def multiplot_storage(storage,traceresults,X,Y,_x,_y):
     fig.colorbar(surf, shrink=0.5, aspect=5)
     plt.xlabel("Total Cache Size")
     plt.ylabel("L1 Relative Size")
-    ax.set_title(trace + ":" + storage)
+    ax.set_title(trace.split(".txt")[0] + ":" + storage)
     plt.savefig(os.path.join(args.outdir, trace.split(".txt")[0] + "-" + storage + ".png"), bbox_inches='tight')
     plt.close('all')
 
