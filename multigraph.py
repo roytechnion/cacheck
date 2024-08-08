@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--infile', action='store', default='multi-output.csv')
 parser.add_argument('-d', '--indir', action='store', default='.')
 parser.add_argument('-o', '--outdir', action='store', default='.\\graphs\\multilevel')
+parser.add_argument('-v', '--verbose', action='store', type=bool, default=False)
 args = parser.parse_args()
 
 
@@ -17,27 +18,27 @@ def multiplot_storage(storage,traceresults,X,Y,_x,_y):
     fig = plt.figure(figsize=plt.figaspect(1))
     ax = fig.add_subplot(1, 2, 1, projection='3d')
     _Z, _ = np.meshgrid(X, Y)
-    #Z = np.zeros((len(X), len(Y)))
-    #print(Z)
     for total, totalresults in traceresults.items():
         for percentage, percentageresults in totalresults.items():
-            print(total, percentage)
-            #Z[np.where(X == total)[0][0], np.where(Y == percentage)[0][0]] = results[trace][total][percentage][storage]
+            if args.verbose:
+                print(total, percentage)
             _Z[np.where(Y == percentage)[0][0], np.where(X == total)[0][0]] = results[trace][total][percentage][storage]
-    print("Z=", _Z)
+    if args.verbose:
+        print("Z=", _Z)
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     surf = ax.plot_surface(_X, _Y, _Z, cmap=cm.coolwarm)
     fig.colorbar(surf, shrink=0.5, aspect=5)
     plt.xlabel("Total Cache Size")
     plt.ylabel("L1 Relative Size")
     ax.set_title(trace + ":" + storage)
-    plt.savefig(os.path.join(args.outdir, trace.split(".")[0] + "-" + storage + ".png"), bbox_inches='tight')
-    plt.close()
+    plt.savefig(os.path.join(args.outdir, trace.split(".txt")[0] + "-" + storage + ".png"), bbox_inches='tight')
+    plt.close('all')
 
 
 results = {}
 with open(os.path.join(args.indir,args.infile), mode ='r') as file:
-    print("opened")
+    if args.verbose:
+        print("opened")
     dictResults = csv.DictReader(file)
     for row in dictResults:
         trace = row['Trace']
@@ -64,7 +65,8 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         results[trace][total][percentage]['WeightedModDB'] = float(row[' WeightedModDB'])
         results[trace][total][percentage]['WeightedSlowDB'] = float(row[' WeightedSlowDB'])
     for trace,traceresults in results.items():
-        print(trace)
+        if args.verbose:
+            print(trace)
         X = []
         Y = []
         for total,totalresults in traceresults.items():
@@ -76,12 +78,12 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         X = np.array(X)
         Y = np.array(Y)
         _X, _Y = np.meshgrid(X, Y)
-        print(_X)
-        print(_Y)
+        if args.verbose:
+            print(_X)
+            print(_Y)
         for storage in ["FastDB","ModDB","SlowDB"]:
             multiplot_storage("Weighted"+storage,traceresults,X,Y,_X,_Y)
-        #plt.show()
-        #input("Press the Enter key to continue: ")
+
 
 
 
