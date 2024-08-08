@@ -29,7 +29,7 @@ def plot_budgets(trace,storage,best_budgets,best_l1s,best_l2s,best_latencies):
     fig = plt.figure(figsize=plt.figaspect(2))
     ax = fig.add_subplot(projection='3d')
     ax.scatter(best_budgets, best_l1s/(best_l1s+best_l2s), best_latencies, marker='^')
-    plt.xlabel("Total Budget")
+    plt.xlabel("Total Budget (Cents/GB/Month)")
     plt.ylabel("L1 Relative Size")
     ax.set_title(trace.split(".txt")[0] + ":" + storage + ":" + str(args.ramcost) + ":" + str(args.ssdcost) + ":" + str(args.unitsize))
     plt.savefig(os.path.join(args.outdir, trace.split(".txt")[0] + "_" + storage + "_" + str(args.ramcost) + "_" + str(args.ssdcost) + "_" + str(args.unitsize) + ".png"), bbox_inches='tight')
