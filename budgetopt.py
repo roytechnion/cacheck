@@ -27,12 +27,28 @@ def plot_budgets(trace,storage,best_budgets,best_l1s,best_l2s,best_latencies):
     best_l1s = np.array(best_l1s)
     best_l2s = np.array(best_l2s)
     best_budgets = np.array(best_budgets)
-    fig = plt.figure(figsize=plt.figaspect(2))
-    ax = fig.add_subplot(projection='3d')
-    ax.scatter(best_budgets/100, best_l1s/(best_l1s+best_l2s), best_latencies, marker='^')
+    width = 0.5
+    best_budgets /= 100
+    bottom = np.zeros(len(best_l2s))
+    bottom_color = 'green'
+    top_color = 'darkorange'
+    fig, axs = plt.subplots(3, 1, sharex=True, figsize=(22, 10))
+    p = axs[0].bar(best_budgets, best_l2s, width, label="L2", bottom=bottom, color=bottom_color)
+    axs[0].bar_label(p, label_type='center')
+    p = axs[0].bar(best_budgets, best_l1s, width, label="L1", bottom=best_l2s, color=top_color)
+    axs[0].set_ylabel("Size (#items)")
+    axs[0].legend(loc="upper left")
+    axs[0].bar_label(p, label_type='center')
+    p = axs[1].bar(best_budgets,best_l2s/(best_l1s+best_l2s), width, label="L2", bottom=bottom, color=bottom_color)
+    axs[1].bar_label(p, label_type='center')
+    p = axs[1].bar(best_budgets, best_l1s / (best_l1s + best_l2s), width, label="L1", bottom=best_l2s/(best_l1s+best_l2s), color=top_color)
+    axs[1].bar_label(p, label_type='center')
+    axs[1].set_ylabel("Relative Sizes")
+    axs[1].legend(loc="upper left")
+    p = axs[2].plot(best_budgets, best_latencies)
+    axs[2].set_ylabel("Latency (ms)")
     plt.xlabel("Budget ($/Month)")
-    plt.ylabel("L1 Relative Size")
-    ax.set_title(trace.split(".txt")[0] + ":" + storage + ":" + str(args.ramcost) + ":" + str(args.ssdcost) + ":" + str(args.unitsize))
+    axs[0].set_title(trace.split(".txt")[0] + ":" + storage + ":" + str(args.ramcost) + ":" + str(args.ssdcost) + ":" + str(args.unitsize))
     plt.savefig(os.path.join(args.outdir, trace.split(".txt")[0] + "_" + storage + "_" + str(args.ramcost) + "_" + str(args.ssdcost) + "_" + str(args.unitsize) + ".png"), bbox_inches='tight')
     plt.close()
 
@@ -93,7 +109,7 @@ def process_input(results):
             best_latencies = []
             budgets = list(results[trace][storage].keys())
             budgets.sort()
-            budget_steps = range(math.ceil(budgets[0]), args.ramcost+1, 20)
+            budget_steps = range(max(100,math.ceil(budgets[0])), args.ramcost+1, 100) #range(math.ceil(budgets[0]), args.ramcost+1, 20)
             max_i = 0
             prev_i = 0
             for budget_limit in budget_steps:
