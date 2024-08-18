@@ -111,3 +111,6 @@ results.*
 multi-output.csv
 levelpolicies.py
 *.csv
+wolfram-functions.txt
+transformed.txt
+budgets.txt
