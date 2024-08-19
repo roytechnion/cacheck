@@ -1,5 +1,8 @@
 import os.path
 import time
+
+import numpy as np
+
 #from simplepolicies import LRU , WTinyLFU, AdaptiveWTinyLFU, WC_WTinyLFU, WI_WTinyLFU
 from simplepolicies import LRU,LFU
 from hierarchical import HierarchicalCache
@@ -8,6 +11,7 @@ import glob
 from costmodel import CostModel
 import argparse
 import graphs
+import math
 
 
 parser = argparse.ArgumentParser()
@@ -17,11 +21,25 @@ parser.add_argument('-t', '--tracesdir', action='store', default='C:\\Users\\use
 parser.add_argument('-r', '--redis', action='store', type=bool, default=False)
 parser.add_argument('-a', '--append', action='store', type=bool, default=False)
 parser.add_argument('-m', '--multilayer', action='store', type=bool, default=False)
+parser.add_argument('-b', '--budgeted', action='store', type=bool, default=False)
+parser.add_argument('-u', '--unitsize', action='store', type=int, default=1024) # minimal size of an item in Bytes
 args = parser.parse_args()
 
+cost_size = 1024*1024*1024 # 1 GB
+units_per_cost = cost_size / args.unitsize
 cache_technologies = [CostModel("DRAM",0.5), CostModel("SSD", 3)]
 # storage_technologies = [CostModel("Dynamodb", 10), CostModel("Mongodb", 50), CostModel("SQL", 100)]
 storage_technologies = [CostModel("FastDB", 10), CostModel("ModDB", 50), CostModel("SlowDB", 100)]
+
+redis_managed_costs = { 0.05: 260,
+                        0.10: 400,
+                        0.20: 720,
+                        0.30: 1040,
+                        0.40: 1360,
+                        0.50: 1680,
+                        1.00: 2300
+                        }
+budgets_of_interest = np.array([100, 200, 300, 400, 600, 600, 700, 800, 900, 1000])
 
 aggresults = {}
 
@@ -70,18 +88,30 @@ def main():
     f.write("\n")
     policies = []
     if args.multilayer:
-        for factor in range(3, 7):
-            for i in range(1, 10, 1):
-                if factor < 6 or i < 2:
-                    cachesize = i*(10**factor)
-                    for percentage in [0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.5]:
-                        policies.append(HierarchicalCache(round(percentage*cachesize), round((1-percentage)*cachesize)))
+        if args.budgeted:
+            for budget in budgets_of_interest:
+                for percentage,cost in redis_managed_costs.items():
+                    if percentage < 1.00:
+                        total_size = math.ceil(budget * units_per_cost/ cost)
+                        policies.append(HierarchicalCache(math.ceil(percentage * total_size), math.ceil((1 - percentage) * total_size)))
+        else:
+            for factor in range(3, 7):
+                for i in range(1, 10, 1):
+                    if factor < 6 or i < 2:
+                        cachesize = i*(10**factor)
+                        for percentage in [0.01, 0.05, 0.10, 0.20, 0.30, 0.40, 0.5]:
+                            policies.append(HierarchicalCache(math.ceil(percentage*cachesize), math.ceil((1-percentage)*cachesize)))
     else:
-        for factor in range(3,7):
-            for i in range(1,10,1):
-                if factor < 6 or i < 2:
-                    policies.append(LRU(i*(10**factor)))
-                    policies.append(LFU(i * (10 ** factor)))
+        if args.budgeted:
+            for budget in budgets_of_interest:
+                size = math.ceil(budget * units_per_cost / redis_managed_costs[1.00])
+                policies.append(LRU(size))
+        else:
+            for factor in range(3,7):
+                for i in range(1,10,1):
+                    if factor < 6 or i < 2:
+                        policies.append(LRU(i*(10**factor)))
+                        policies.append(LFU(i * (10 ** factor)))
     #tracesfiles = glob.glob("C:\\Users\\user\\PycharmProjects\\TraceGenerator\\zipf_traces\\zipf_[1-1].[0-5]_0.0.tr")
     tracesfiles = []
     if args.redis:
