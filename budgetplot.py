@@ -96,6 +96,7 @@ def trace_plot(trace,single,multi,storage):
     #plt.xlim(min(budgets_of_interest), max(budgets_of_interest))
     #plt.ylim(min(latencies), max(latencies))
     plt.ylim(ymin=0)
+    plt.grid(True)
     plt.xlabel('Budget',fontsize=20)
     plt.ylabel('Simulated Access Time (ms)', fontsize=20)
     plt.legend()
