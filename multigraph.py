@@ -41,7 +41,7 @@ with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         print("opened")
     dictResults = csv.DictReader(file)
     for row in dictResults:
-        trace = row['Trace']
+        trace = str(row['Trace']).strip()
         if trace not in results:
             results[trace] = {}
         L1_size = int(row['L1_Size'])

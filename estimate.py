@@ -32,7 +32,7 @@ def parse_input():
     with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         dictResults = csv.DictReader(file)
         for row in dictResults:
-            trace = row['Trace               '].split(".txt")[0]
+            trace = str(row['Trace               '].split(".txt")[0]).strip()
             if trace not in results:
                 results[trace] = {}
                 results[trace]["nacceses"] = int(row['Hits        ']) + int(row['Misses      '])

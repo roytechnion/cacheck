@@ -36,7 +36,7 @@ def parse_single_input():
     with open(os.path.join(args.indir,args.singlefile), mode ='r') as file:
         dictResults = csv.DictReader(file)
         for row in dictResults:
-            trace = row['Trace               '].split(".txt")[0]
+            trace = str(row['Trace               '].split(".txt")[0]).strip()
             if trace not in results:
                 results[trace] = {}
             policy = row['Policy      '].strip()
@@ -56,7 +56,7 @@ def parse_multi_input():
     with open(os.path.join(args.indir,args.multifile), mode ='r') as file:
         dictResults = csv.DictReader(file)
         for row in dictResults:
-            trace = row['Trace'].split(".txt")[0]
+            trace = str(row['Trace'].split(".txt")[0]).strip()
             if trace not in results:
                 results[trace] = {}
             l1_size = int(row['L1_Size'].strip())

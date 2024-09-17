@@ -58,7 +58,7 @@ def parse_input():
     with open(os.path.join(args.indir,args.infile), mode ='r') as file:
         dictResults = csv.DictReader(file)
         for row in dictResults:
-            trace = row['Trace']
+            trace = str(row['Trace']).split()
             if trace not in results:
                 results[trace] = {}
             L1_size = int(row['L1_Size'])
