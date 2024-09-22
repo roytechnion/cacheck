@@ -70,13 +70,15 @@ def parse_multi_input():
 
 
 def trace_plot(trace,single,multi,storage):
+    divider = np.full(len(budgets_of_interest),100)
+    scaled_budgets_of_interest = budgets_of_interest / divider
     plt.figure()
     plt.rc('xtick', labelsize=18)
     plt.rc('ytick', labelsize=18)
     sizes = budgets_of_interest * units_per_cost / redis_managed_costs[1.00]
     sizes = list(map(lambda size: round(size),sizes))
     latencies = list(map(lambda size: single[size][storage],sizes))
-    plt.plot(budgets_of_interest, latencies, label='100%')
+    plt.plot(scaled_budgets_of_interest, latencies, label='100%')
     for ratio in redis_managed_costs.keys():
         if ratio < 0.3:
             total_sizes = budgets_of_interest * units_per_cost / redis_managed_costs[ratio]
@@ -92,12 +94,12 @@ def trace_plot(trace,single,multi,storage):
             size_pairs = list(zip(l1_sizes, l2_sizes))
             print("trace_plot_2:", total_sizes, l1_sizes, l2_sizes)
             latencies = list(map(lambda size_pair: multi[size_pair][storage],size_pairs))
-            plt.plot(budgets_of_interest, latencies, label=str(ratio * 100)+'%')
+            plt.plot(scaled_budgets_of_interest, latencies, label=str(ratio * 100)+'%')
     #plt.xlim(min(budgets_of_interest), max(budgets_of_interest))
     #plt.ylim(min(latencies), max(latencies))
     plt.ylim(ymin=0)
     plt.grid(True)
-    plt.xlabel('Budget',fontsize=20)
+    plt.xlabel('Budget ($ per month)',fontsize=20)
     plt.ylabel('Simulated Access Time (ms)', fontsize=20)
     plt.legend()
     plt.title(trace+":"+storage+":managed")
